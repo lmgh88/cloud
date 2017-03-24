@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+    <title>tag2</title>
+    <script src="http://apps.bdimg.com/libs/d3/3.4.8/d3.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://mjs.sinaimg.cn/wap/module/base/js/zepto.min.js"></script>
+    <style type="text/css">
+        body {
+            text-align: center;
+            margin: 0;
+            font-family: 'Microsoft Yahei', Arial;
+        }
+
+        .container {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+<div class="container"></div>
+<script type="text/javascript">
+    var data = {
+        'SUV': 27,
+        '比较': 10,
+        '昂科威': 7,
+        '自主': 6,
+        '时尚': 5,
+        '缺点': 11,
+        '出色': 10,
+        '新车': 17,
+        '东风风光580': 9,
+        '相比': 13,
+        '口碑': 9,
+        '前十': 11,
+        '内存': 15,
+        '销量': 25,
+        '指导价': 10,
+        '哈弗H6': 9,
+        '配置': 13,
+        '哈弗': 8
+    };
+    var $container = $('.container'), diameterW = $container.width(), diameterH = $container.height();
+
+    var bubble = d3.layout.pack()
+            .sort(null)
+            .size([diameterW, diameterH])
+            .padding(5);
+
+    var svg = d3.select(".container").append("svg")
+            .attr("width", diameterW)
+            .attr("height", diameterH);
+
+    function geneGrad(len) {
+        var id_prefix = '', tGen, rdNum;
+        var getRdn = function (min, max) {
+            return Math.floor(Math.random() * (max - min) + min);
+        }
+        for (var i = 0; i < len; i++) {
+            id_prefix = 'svg_grdnt_';
+            id_prefix += i;
+            tGen = svg.append('defs').append('linearGradient').attr({
+                'x1': 0,
+                'y1': 0,
+                'x2': 1,
+                'y2': 1,
+                'id': id_prefix
+            });
+            rdNum = getRdn(0, 360);
+            tGen.append('stop').attr({
+                'stop-color': 'hsl(' + rdNum + ',100%,50%)',
+                'offset': 0
+            })
+            tGen.append('stop').attr({
+                'stop-color': 'hsl(' + rdNum + ',30%,50%)',
+                'offset': 1
+            })
+        }
+    }
+    geneGrad((function () {
+        var len = 0;
+        for(var i in data){
+            len++;
+        }
+        return len;
+    })());
+    var result = d3.entries(data);
+    var fillIndex = 0;
+
+    var startString = "{\"name\": \"flare\",\"children\": [";
+    result.forEach(function (dude) {
+        startString += "{\"name\":\"" + dude.key + "\",\"size\":" + dude.value + "},";
+    });
+    startString = startString.substring(0, startString.length - 1);
+    startString += "]}";
+    var json2 = JSON.parse(startString);
+
+    var node = svg.selectAll(".node")
+            .data(bubble.nodes(classes(json2))
+                    .filter(function (d) {
+                        return !d.children;
+                    }))
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", function (d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            });
+    node.append("title")
+            .text(function (d) {
+                return d.className + ": " + (d.value);
+            });
+    node.append("circle")
+            .attr("r", function (d) {
+                return d.r;
+            })
+            .style("fill", function (d) {
+                return 'url(#svg_grdnt_' + fillIndex++ + ')';
+            });
+
+    node.append("text")
+            .attr({
+                "dy": ".366em",
+                'fill':'#fff'
+            })
+            .style({"text-anchor": "middle", "font-Size": function (d) {
+                d.className /*todo:字体变大些*/
+                return (d.value < 9 ? 9 : d.value) + 'px';
+            }})
+            .text(function (d) {
+                return d.className.substring(0, d.r / 3);
+            });
+
+    function classes(root) {
+        var classes = [];
+
+        function recurse(name, node) {
+            if (node.children) {
+                node.children.forEach(function (child) {
+                    recurse(node.name, child);
+                })
+            } else {
+                classes.push({
+                    className: node.name,
+                    value: node.size
+                })
+            }
+        }
+
+        recurse(null, root);
+        return {
+            children: classes
+        };
+    }
+</script>
+</body>
+</html>
